@@ -1,0 +1,37 @@
+version: 0.2
+
+phases:
+
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - ECR_REGISTRY=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+
+  build:
+    commands:
+      - echo Building frontend image...
+      - docker build -t appdirect-frontend:latest microservices/frontend
+      - docker tag appdirect-frontend:latest $ECR_REGISTRY/appdirect-frontend:latest
+
+      - echo Building product-service image...
+      - docker build -t appdirect-product:latest microservices/product-service
+      - docker tag appdirect-product:latest $ECR_REGISTRY/appdirect-product:latest
+
+      - echo Building order-service image...
+      - docker build -t appdirect-order:latest microservices/order-service
+      - docker tag appdirect-order:latest $ECR_REGISTRY/appdirect-order:latest
+
+  post_build:
+    commands:
+      - echo Pushing frontend image...
+      - docker push $ECR_REGISTRY/appdirect-frontend:latest
+
+      - echo Pushing product image...
+      - docker push $ECR_REGISTRY/appdirect-product:latest
+
+      - echo Pushing order image...
+      - docker push $ECR_REGISTRY/appdirect-order:latest
+
+      - echo Microservice images successfully pushed to Amazon ECR.
