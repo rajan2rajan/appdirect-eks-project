@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: appdirect
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: 363518211010.dkr.ecr.ap-southeast-2.amazonaws.com/appdirect-frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+          env:
+            - name: PRODUCT_SERVICE_URL
+              value: "http://product-service:5000/api/products"
+            - name: ORDER_SERVICE_URL
+              value: "http://order-service:5000/api/orders"
