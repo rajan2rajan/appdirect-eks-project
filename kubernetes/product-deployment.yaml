@@ -1,22 +1,35 @@
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: product-service
   namespace: appdirect
+
 spec:
   replicas: 2
+
   selector:
     matchLabels:
       app: product-service
+
   template:
     metadata:
       labels:
         app: product-service
+
     spec:
       containers:
         - name: product-service
           image: 363518211010.dkr.ecr.ap-southeast-2.amazonaws.com/appdirect-product:latest
           imagePullPolicy: Always
+
           ports:
             - containerPort: 5000
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
