@@ -1,0 +1,180 @@
+# =====================================================
+# PRODUCT SERVICE DEPLOYMENT
+# =====================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: appdirect
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: product-service
+  template:
+    metadata:
+      labels:
+        app: product-service
+    spec:
+      containers:
+        - name: product-service
+          image: 363518211010.dkr.ecr.ap-southeast-2.amazonaws.com/appdirect-product:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
+---
+# =====================================================
+# PRODUCT SERVICE
+# =====================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-service
+  namespace: appdirect
+spec:
+  selector:
+    app: product-service
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+  type: ClusterIP
+
+---
+# =====================================================
+# ORDER SERVICE DEPLOYMENT
+# =====================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: appdirect
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+        - name: order-service
+          image: 363518211010.dkr.ecr.ap-southeast-2.amazonaws.com/appdirect-order:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
+---
+# =====================================================
+# ORDER SERVICE
+# =====================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: appdirect
+spec:
+  selector:
+    app: order-service
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+  type: ClusterIP
+
+---
+# =====================================================
+# FRONTEND DEPLOYMENT
+# =====================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: appdirect
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: 363518211010.dkr.ecr.ap-southeast-2.amazonaws.com/appdirect-frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+          env:
+            - name: PRODUCT_SERVICE_URL
+              value: "http://product-service:5000/api/products"
+            - name: ORDER_SERVICE_URL
+              value: "http://order-service:5000/api/orders"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
+---
+# =====================================================
+# FRONTEND SERVICE / AWS LOAD BALANCER
+# =====================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: appdirect
+spec:
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+  type: LoadBalancer
+
+---
+# =====================================================
+# FRONTEND HORIZONTAL POD AUTOSCALER
+# =====================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: frontend
+  namespace: appdirect
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: frontend
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
