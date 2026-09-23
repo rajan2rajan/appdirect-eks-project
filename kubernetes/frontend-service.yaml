@@ -3,10 +3,14 @@ kind: Service
 metadata:
   name: frontend
   namespace: appdirect
+
 spec:
   selector:
     app: frontend
+
   ports:
-    - port: 80
+    - protocol: TCP
+      port: 80
       targetPort: 5000
+
   type: LoadBalancer
